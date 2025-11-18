@@ -48,4 +48,3 @@ for i in $(seq 0 $((TOPIC_COUNT - 1))); do
 done
 
 echo "🎉 All $TOPIC_COUNT topics initialized successfully"
-sleep infinity
