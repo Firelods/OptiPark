@@ -1,0 +1,36 @@
+{
+  "$id": "https://parking-campus/schema/magnetic-raw-event.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MagneticRawEvent",
+  "type": "object",
+  "required": [
+    "message_id",
+    "parking_id",
+    "slot_id",
+    "sensor_id",
+    "gateway_id",
+    "event_type",
+    "occupied",
+    "sent_at"
+  ],
+  "properties": {
+    "message_id": { "type": "string", "format": "uuid" },
+    "parking_id": { "type": "string" },
+    "slot_id": { "type": "string" },
+    "sensor_id": { "type": "string" },
+    "gateway_id": { "type": "string" },
+    "event_type": {
+      "type": "string",
+      "enum": ["STATE_CHANGED", "HEARTBEAT", "BATTERY_LOW"]
+    },
+    "occupied": { "type": "boolean" },
+    "raw_magnetic": { "type": "number" },
+    "battery_mv": { "type": "integer", "minimum": 0 },
+    "rssi_dbm": { "type": "integer" },
+    "fw_version": { "type": "string" },
+    "sent_at": { "type": "string", "format": "date-time" },
+    "received_at": { "type": "string", "format": "date-time" },
+    "extra": { "type": "object" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,16 @@
+topics:
+  - name: parking.nice_sophia.p1.magnetic.raw
+    partitions: 3
+    replicationFactor: 1
+
+  - name: parking.nice_sophia.p2.magnetic.raw
+    partitions: 3
+    replicationFactor: 1
+
+  - name: parking.nice_sophia.p3.magnetic.raw
+    partitions: 3
+    replicationFactor: 1
+
+  - name: parking-state
+    partitions: 1
+    replicationFactor: 1
