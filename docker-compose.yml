@@ -79,17 +79,23 @@ services:
     networks:
       - parking-net
   # ---------------------------------------------------------
-  # 6) INIT TOPICS via Python + topics.yaml
+  # 6) INIT TOPICS - Simple et direct
   # ---------------------------------------------------------
   kafka-init:
     image: confluentinc/cp-kafka:7.6.0
     container_name: kafka-init
     depends_on:
       - kafka
-    volumes:
-      - ./scripts:/scripts
-      - ./topics.yaml:/topics.yaml
-    entrypoint: ["bash", "/scripts/init_kafka_topics.sh"]
+    command: >
+      bash -c "
+      echo 'Waiting for Kafka...';
+      cub kafka-ready -b kafka:9092 1 30;
+      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --topic parking.nice_sophia.p1.magnetic.raw;
+      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --topic parking.nice_sophia.p2.magnetic.raw;
+      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --topic parking.nice_sophia.p3.magnetic.raw;
+      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1 --topic parking-state;
+      echo 'Topics created successfully';
+      "
     networks:
       - parking-net
 
