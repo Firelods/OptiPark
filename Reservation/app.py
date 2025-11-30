@@ -1,7 +1,11 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from reservation_logic import find_best_spot
 
 app = Flask(__name__)
+
+# Enable CORS for all origins (or restrict to your web app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.post("/reserve")
 def reserve():
@@ -11,6 +15,12 @@ def reserve():
 
     result = find_best_spot(block_id, rfid)
     return jsonify(result)
+
+@app.get("/get-spots")
+def get_spots():
+    # you need to return all spot data here
+    from reservation_logic import get_all_spots
+    return jsonify({"spots": get_all_spots()})
 
 @app.get("/health")
 def health():
