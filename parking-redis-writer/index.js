@@ -19,9 +19,9 @@ const redis = new Redis({
 });
 
 const topics = [
-  'parking.nice_sophia.p1.magnetic.raw',
-  'parking.nice_sophia.p2.magnetic.raw',
-  'parking.nice_sophia.p3.magnetic.raw',
+  'parking.nice_sophia.A',
+  'parking.nice_sophia.B',
+  'parking.nice_sophia.C',
 ];
 
 async function run() {
