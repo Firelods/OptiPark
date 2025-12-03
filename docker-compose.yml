@@ -40,6 +40,12 @@ services:
 
     volumes:
       - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - parking-net
 
@@ -78,6 +84,23 @@ services:
       KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
     networks:
       - parking-net
+
+  # ---------------------------------------------------------
+  # 5) Redis Stack (avec RedisJSON, RedisTimeSeries, etc.)
+  # ---------------------------------------------------------
+  redis:
+    image: redis/redis-stack:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    volumes:
+      - redis-data:/data
+      - ./kafka/scripts/init.sh:/scripts/init.sh
+    restart: unless-stopped
+    networks:
+      - parking-net
+
   # ---------------------------------------------------------
   # 6) INIT TOPICS - Simple et direct
   # ---------------------------------------------------------
@@ -90,10 +113,9 @@ services:
       bash -c "
       echo 'Waiting for Kafka...';
       cub kafka-ready -b kafka:9092 1 30;
-      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --topic parking.nice_sophia.p1.magnetic.raw;
-      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --topic parking.nice_sophia.p2.magnetic.raw;
-      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --topic parking.nice_sophia.p3.magnetic.raw;
-      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1 --topic parking-state;
+      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --topic parking.nice_sophia.A;
+      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --topic parking.nice_sophia.B;
+      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --topic parking.nice_sophia.C;
       echo 'Topics created successfully';
       "
     networks:
@@ -110,10 +132,47 @@ services:
       - schema-registry
     volumes:
       - ./schemas:/schemas
-      - ./scripts/init_registry.sh:/init_registry.sh
+      - ./kafka/scripts/init_registry.sh:/init_registry.sh
     entrypoint: ["/bin/sh", "/init_registry.sh"]
     networks:
       - parking-net
+  
+  parking-redis-writer:
+    build: ./parking-redis-writer
+    container_name: parking-redis-writer
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_GROUP_ID: parking-redis-writer
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    networks:
+      - parking-net
+  
+  controle-reservation:
+    build: ./controle-reservation
+    container_name: controle-reservation
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_GROUP_ID: controle-reservation
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      FIREBASE_CREDENTIALS: /firebase/serviceAccount.json
+    volumes:
+      - ./controle-reservation/firebase:/firebase:ro
+    networks:
+      - parking-net
+
+
 
 
 networks:
@@ -121,3 +180,4 @@ networks:
 
 volumes:
   kafka-data:
+  redis-data:
