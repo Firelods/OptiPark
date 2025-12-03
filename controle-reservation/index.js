@@ -14,9 +14,9 @@ const FIREBASE_CREDENTIALS = process.env.FIREBASE_CREDENTIALS || "/firebase/serv
 const RESERVATIONS_COLLECTION = "reservations";
 
 const RAW_TOPICS = [
-  "parking.nice_sophia.p1.magnetic.raw",
-  "parking.nice_sophia.p2.magnetic.raw",
-  "parking.nice_sophia.p3.magnetic.raw",
+  "parking.nice_sophia.A",
+  "parking.nice_sophia.B",
+  "parking.nice_sophia.C",
 ];
 
 // -----------------------------------------------------------
