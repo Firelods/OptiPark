@@ -21,13 +21,6 @@ with open("config/spots.json") as f:
 # 1) UTILITY — Read spot state from Redis
 # ============================================================
 def get_spot_state(spot_id):
-    """
-    Reads live info from Redis:
-    - status
-    - rfid
-    - battery
-    - parking_id (should already be in Redis)
-    """
     key = f"spot:{spot_id}"
     return r.hgetall(key)
 
@@ -36,50 +29,49 @@ def get_spot_state(spot_id):
 # 2) UTILITY — Reserve a spot (update Redis)
 # ============================================================
 def reserve_spot(spot_id, rfid):
-    """
-    Update Redis:
-    status = 2 (reserved)
-    rfid = tag used
-    """
     key = f"spot:{spot_id}"
     r.hset(key, mapping={
-        "status": 2,
+        "status": 2,  # reserved
         "rfid": rfid
     })
 
 
 # ============================================================
-# 3) DISTANCE CALCULATION
+# 3) DISTANCE (kept for compatibility but NOT used for sorting)
 # ============================================================
 def distance_spot_block(spot_id, block_id):
-    s = SPOTS[spot_id]     # static coordinates
-    b = BLOCKS[block_id]   # static block position
+    s = SPOTS[spot_id]
+    b = BLOCKS[block_id]
     return math.sqrt((s["x"] - b["x"])**2 + (s["y"] - b["y"])**2)
 
 
 # ============================================================
-# 4) FIND BEST SPOT (reservation logic)
+# 4) FIND BEST SPOT (new logic)
 # ============================================================
 def find_best_spot(block_id, rfid):
     """
-    Steps:
-    1) Sort spots by distance to block
-    2) Check Redis state for each spot
-    3) Select the first free one
-    4) Reserve it (update Redis)
+    New behavior:
+    - Select only the spots in the same parking as the block
+    - Sort by X DESC (closest first)
+    - Pick the first free spot
     """
-    sorted_spots = sorted(
-        SPOTS.values(),
-        key=lambda s: distance_spot_block(s["id"], block_id)
+    block = BLOCKS[block_id]
+    parking_id = block["parking_id"]
+
+    # Filter spots by parking & sort by X DESC
+    candidate_spots = sorted(
+        [s for s in SPOTS.values() if s["parking_id"] == parking_id],
+        key=lambda s: s["x"],
+        reverse=True
     )
 
-    for spot in sorted_spots:
+    for spot in candidate_spots:
         spot_id = spot["id"]
         redis_state = get_spot_state(spot_id)
 
-        status = int(redis_state.get("status", 0))  # default = free
+        status = int(redis_state.get("status") or 0)  # SAFE
 
-        if status == 0:  # FREE
+        if status == 0:  # free
             reserve_spot(spot_id, rfid)
             return {
                 "spot_id": spot_id,
@@ -89,35 +81,43 @@ def find_best_spot(block_id, rfid):
                 "distance": distance_spot_block(spot_id, block_id)
             }
 
-    return { "error": "NO_SPOT_AVAILABLE" }
+    return {"error": "NO_SPOT_AVAILABLE"}
 
 
 # ============================================================
-# 5) GET ALL SPOTS (for /get-spots)
+# 5) GET ALL SPOTS (safe int parsing)
 # ============================================================
 def get_all_spots():
-    """
-    Returns the complete list of spots with:
-    - static coordinates (from JSON)
-    - live Redis state
-    """
     spots = {}
 
     for spot_id, spot_data in SPOTS.items():
-
         redis_state = get_spot_state(spot_id)
-        status = int(redis_state.get("status", 0))
-        rfid = redis_state.get("rfid", "")
-        battery = int(redis_state.get("battery", 0))
-        parking = redis_state.get("parking_id", spot_data["parking_id"])
+
+        status = int(redis_state.get("status") or 0)
+        battery = int(redis_state.get("battery") or 0)
 
         spots[spot_id] = {
             "status": status,
-            "rfid": rfid,
+            "rfid": redis_state.get("rfid", ""),
             "battery": battery,
             "x": spot_data["x"],
             "y": spot_data["y"],
-            "parking_id": parking
+            "parking_id": redis_state.get("parking_id", spot_data["parking_id"]),
         }
 
     return spots
+
+# ============================================================
+# CANCEL A RESERVATION (set status back to FREE)
+# ============================================================
+def cancel_reservation(spot_id):
+    """
+    Reset the spot in Redis after a user cancels:
+    - status = 0 (free)
+    - rfid = "" (clear any tag)
+    """
+    key = f"spot:{spot_id}"
+    r.hset(key, mapping={
+        "status": 0,
+        "rfid": ""
+    })
