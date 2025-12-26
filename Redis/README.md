@@ -7,12 +7,18 @@ A simple guide explaining how to execute the `init.sh` script to reset and initi
 This script:
 - Clears the entire Redis database (`FLUSHALL`)
 - Creates Parking A and Parking B
-- Creates 4 parking spots for each parking
+- Creates 20 parking spots for each parking
 - Initializes every spot with:
-  - `status = 0` (free)
-  - `rfid = ""` (no assigned user)
-- Prepares Redis for the reservation service, mobile app, and automation logic
-
+  - `status = 0` FREE
+  - `type = NORMAL | PMR | EV | COVERED`
+  - `parking_id = A | B`
+- Creates Redis indexes to support fast reservation logic:
+  - Free spots per parking
+  - Spot types (EV, PMR, COVERED, NORMAL)
+This structure is designed for:
+- Reservation logic
+- Closest-spot calculation to a block
+- Integration with the 3D campus visualization
 
 
 ## Requirements
@@ -37,21 +43,20 @@ docker compose up -d
 ## Run the Initialization Script
 Execute:
 ```bash
-docker exec -it redis-server sh /data/init.sh
+docker exec -i redis-server redis-cli < init_parking.redis
 ```
 
-## Verify the Database
-Open Redis CLI:
-```bash
-docker exec -it redis-server redis-cli
-```
-Check parking entries:
-```bash
-HGETALL parking:A
-HGETALL parking:B
-```
-Check the list of spots:
-```bash
-SMEMBERS parking:A:spots
-SMEMBERS parking:B:spots
-```
+## Redis Data Model
+
+Each parking spot is stored as a Redis hash:
+
+spot:{SPOT_ID}
+
+Example:
+spot:A-16
+
+Fields:
+- status → FREE | RESERVED | OCCUPIED | BLOCKED
+- type → NORMAL | PMR | EV | COVERED
+- parking_id → A | B
+
