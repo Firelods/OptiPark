@@ -1,14 +1,6 @@
 {
   "parkings": [
-    {
-      "id": "A",
-      "name": "Parking A",
-      "spots": ["A-1", "A-2", "A-3", "A-4"]
-    },
-    {
-      "id": "B",
-      "name": "Parking B",
-      "spots": ["B-1", "B-2", "B-3", "B-4"]
-    }
+    { "id": "A", "x": -10, "y": 2 },
+    { "id": "B", "x":  30, "y": 2 }
   ]
 }
