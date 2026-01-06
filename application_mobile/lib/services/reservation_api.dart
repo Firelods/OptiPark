@@ -64,4 +64,26 @@ class ReservationAPI {
       throw Exception("Cancel failed (${response.statusCode})");
     }
   }
+
+  // ============================================================
+  // CONFIRM RESERVATION
+  // ============================================================
+  static Future<bool> confirmReservation(String spotId) async {
+    final baseUrl = await _baseUrl();
+    final url = Uri.parse("$baseUrl/confirm-reservation");
+
+    final body = {"spot_id": spotId};
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      throw Exception("Confirm failed (${response.statusCode})");
+    }
+  }
 }

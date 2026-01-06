@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -52,10 +54,12 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       final uid = user.uid;
+      final fcmToken = await FirebaseMessaging.instance.getToken();
 
       await FirebaseFirestore.instance.collection("users").doc(uid).set({
         "fullName": extractNameFromEmail(user.email ?? email.text.trim()),
         "email": user.email ?? email.text.trim(),
+        "fcmToken": fcmToken,
       }, SetOptions(merge: true));
 
       if (!mounted) return;
