@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:application_mobile/screens/home_wrapper.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import '../services/reservation_api.dart';
 import 'qr_page.dart';
@@ -226,7 +227,7 @@ class _MapPageScreenState extends State<MapPageScreen> {
           "timestamp": Timestamp.fromDate(now),
           "expiresAt": Timestamp.fromDate(expiresAt),
           "qrData": "OPTIPARK:$reservedPlace:${widget.fullName}",
-          "Arrived": false,
+          "arrived": false,
         });
 
     reservationId = docRef.id;

@@ -12,6 +12,7 @@ import 'services/ip_config.dart';
 import 'screens/ip_prompt_page.dart';
 
 final RouteObserver<ModalRoute> routeObserver = RouteObserver<ModalRoute>();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 /// ✅ BACKGROUND FCM HANDLER (REQUIRED)
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -37,6 +38,7 @@ class App extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: "Reservation App",
+      navigatorKey: navigatorKey,
       navigatorObservers: [routeObserver],
       theme: ThemeData(useMaterial3: true, primarySwatch: Colors.blue),
 

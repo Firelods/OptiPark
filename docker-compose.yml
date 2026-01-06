@@ -96,8 +96,36 @@ services:
       - "8001:8001"
     volumes:
       - redis-data:/data
-      - ./kafka/scripts/init.sh:/scripts/init.sh
+      - ./Redis/init_parking.redis:/scripts/init_parking.redis
+      - ./Redis/init_redis.sh:/scripts/init_redis.sh
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
+    networks:
+      - parking-net
+
+  # ---------------------------------------------------------
+  # Redis Initialization - Charge les données de parking
+  # ---------------------------------------------------------
+  redis-init:
+    image: redis/redis-stack:latest
+    container_name: redis-init
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./Redis/init_parking.redis:/scripts/init_parking.redis
+      - ./Redis/init_redis.sh:/scripts/init_redis.sh
+    command: >
+      bash -c "
+      echo '🔄 Initialisation Redis...';
+      chmod +x /scripts/init_redis.sh;
+      /scripts/init_redis.sh;
+      echo '✅ Initialisation terminée';
+      "
     networks:
       - parking-net
 
@@ -144,7 +172,7 @@ services:
       kafka:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     environment:
       KAFKA_BROKERS: kafka:9092
       KAFKA_GROUP_ID: parking-redis-writer
@@ -152,7 +180,7 @@ services:
       REDIS_PORT: 6379
     networks:
       - parking-net
-  
+
   controle-reservation:
     build: ./controle-reservation
     container_name: controle-reservation
@@ -160,7 +188,7 @@ services:
       kafka:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     environment:
       KAFKA_BROKERS: kafka:9092
       KAFKA_GROUP_ID: controle-reservation
@@ -172,7 +200,47 @@ services:
     networks:
       - parking-net
 
+  # ---------------------------------------------------------
+  # Service API Reservation (Python Flask)
+  # ---------------------------------------------------------
+  reservation:
+    build: ./Reservation
+    container_name: reservation-api
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - parking-net
+    restart: unless-stopped
 
+  # ---------------------------------------------------------
+  # Application Web (React/Vite Frontend)
+  # ---------------------------------------------------------
+  application-web:
+    build:
+      context: ./application web
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+    container_name: application-web
+    depends_on:
+      - reservation
+    ports:
+      - "3000:80"
+    networks:
+      - parking-net
+    restart: unless-stopped
 
 
 networks:
