@@ -1,0 +1,6 @@
+{
+  "blocks": [
+    { "id": "A", "parking_id": "A", "x": 0, "y": 10 },
+    { "id": "B", "parking_id": "B", "x": 20, "y": 10 }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "spots": [
+    { "id": "A-1", "parking_id": "A", "x": 6,  "y": 5 },
+    { "id": "A-2", "parking_id": "A", "x": 8,  "y": 5 },
+    { "id": "A-3", "parking_id": "A", "x": 10, "y": 5 },
+    { "id": "A-4", "parking_id": "A", "x": 12, "y": 5 },
+
+    { "id": "B-1", "parking_id": "B", "x": 26, "y": 5 },
+    { "id": "B-2", "parking_id": "B", "x": 28, "y": 5 },
+    { "id": "B-3", "parking_id": "B", "x": 30, "y": 5 },
+    { "id": "B-4", "parking_id": "B", "x": 32, "y": 5 }
+  ]
+}

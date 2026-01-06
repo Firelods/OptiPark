@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "593221489906",
+    "project_id": "application-mobile-eae76",
+    "storage_bucket": "application-mobile-eae76.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:593221489906:android:ff3c9895da7b8c35afec6b",
+        "android_client_info": {
+          "package_name": "com.example.application_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvLIq535sMrHgNCqBFVJxyXh9CrL6Fd2A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
