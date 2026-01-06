@@ -92,7 +92,37 @@ class _QrPageState extends State<QrPage> {
     );
 
     if (confirm == true) {
-      await _cancelReservation();
+      await _confirmReservation();
+    }
+  }
+
+  // -------------------------------------------------------------
+  Future<void> _confirmReservation() async {
+    try {
+      // ✅ Appel API → status = 1 dans Redis
+      await ReservationAPI.confirmReservation(widget.reservedPlace);
+
+      // ✅ Stop le compteur
+      timer?.cancel();
+
+      if (!mounted) return;
+
+      // ✅ Retour vers Home (sans supprimer Firestore)
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HomePage(
+            fullName: widget.fullName,
+            email: FirebaseAuth.instance.currentUser!.email ?? "",
+          ),
+        ),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Confirmation failed")));
     }
   }
 
