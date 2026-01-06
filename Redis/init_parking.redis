@@ -1,0 +1,110 @@
+########################################
+# RESET DATABASE
+########################################
+FLUSHALL
+
+
+########################################
+# PARKING A — 20 SPOTS
+########################################
+
+# ---- Row 0 (covered) ----
+HSET spot:A-1  status FREE type COVERED parking_id A
+HSET spot:A-2  status FREE type COVERED parking_id A
+HSET spot:A-3  status FREE type COVERED parking_id A
+HSET spot:A-4  status FREE type PMR     parking_id A
+HSET spot:A-5  status FREE type PMR     parking_id A
+
+# ---- Row 1 ----
+HSET spot:A-6  status FREE type NORMAL  parking_id A
+HSET spot:A-7  status FREE type NORMAL  parking_id A
+HSET spot:A-8  status FREE type NORMAL  parking_id A
+HSET spot:A-9  status FREE type PMR     parking_id A
+HSET spot:A-10 status FREE type PMR     parking_id A
+
+# ---- Row 2 ----
+HSET spot:A-11 status FREE type NORMAL  parking_id A
+HSET spot:A-12 status FREE type NORMAL  parking_id A
+HSET spot:A-13 status FREE type NORMAL  parking_id A
+HSET spot:A-14 status FREE type NORMAL  parking_id A
+HSET spot:A-15 status FREE type NORMAL  parking_id A
+
+# ---- Row 3 (EV) ----
+HSET spot:A-16 status FREE type EV      parking_id A
+HSET spot:A-17 status FREE type EV      parking_id A
+HSET spot:A-18 status FREE type EV      parking_id A
+HSET spot:A-19 status FREE type NORMAL  parking_id A
+HSET spot:A-20 status FREE type NORMAL  parking_id A
+
+
+########################################
+# PARKING B — 20 SPOTS (same layout)
+########################################
+
+HSET spot:B-1  status FREE type COVERED parking_id B
+HSET spot:B-2  status FREE type COVERED parking_id B
+HSET spot:B-3  status FREE type COVERED parking_id B
+HSET spot:B-4  status FREE type PMR     parking_id B
+HSET spot:B-5  status FREE type PMR     parking_id B
+
+HSET spot:B-6  status FREE type NORMAL  parking_id B
+HSET spot:B-7  status FREE type NORMAL  parking_id B
+HSET spot:B-8  status FREE type NORMAL  parking_id B
+HSET spot:B-9  status FREE type PMR     parking_id B
+HSET spot:B-10 status FREE type PMR     parking_id B
+
+HSET spot:B-11 status FREE type NORMAL  parking_id B
+HSET spot:B-12 status FREE type NORMAL  parking_id B
+HSET spot:B-13 status FREE type NORMAL  parking_id B
+HSET spot:B-14 status FREE type NORMAL  parking_id B
+HSET spot:B-15 status FREE type NORMAL  parking_id B
+
+HSET spot:B-16 status FREE type EV      parking_id B
+HSET spot:B-17 status FREE type EV      parking_id B
+HSET spot:B-18 status FREE type EV      parking_id B
+HSET spot:B-19 status FREE type NORMAL  parking_id B
+HSET spot:B-20 status FREE type NORMAL  parking_id B
+
+
+########################################
+# INDEXES — FREE SPOTS PER PARKING
+########################################
+
+# Parking A
+SADD parking:A:free \
+  A-1 A-2 A-3 A-4 A-5 \
+  A-6 A-7 A-8 A-9 A-10 \
+  A-11 A-12 A-13 A-14 A-15 \
+  A-16 A-17 A-18 A-19 A-20
+
+# Parking B
+SADD parking:B:free \
+  B-1 B-2 B-3 B-4 B-5 \
+  B-6 B-7 B-8 B-9 B-10 \
+  B-11 B-12 B-13 B-14 B-15 \
+  B-16 B-17 B-18 B-19 B-20
+
+
+########################################
+# INDEXES — SPOTS BY TYPE
+########################################
+
+# PMR
+SADD type:PMR \
+  A-4 A-5 A-9 A-10 \
+  B-4 B-5 B-9 B-10
+
+# EV
+SADD type:EV \
+  A-16 A-17 A-18 \
+  B-16 B-17 B-18
+
+# COVERED
+SADD type:COVERED \
+  A-1 A-2 A-3 \
+  B-1 B-2 B-3
+
+# NORMAL
+SADD type:NORMAL \
+  A-6 A-7 A-8 A-11 A-12 A-13 A-14 A-15 A-19 A-20 \
+  B-6 B-7 B-8 B-11 B-12 B-13 B-14 B-15 B-19 B-20
