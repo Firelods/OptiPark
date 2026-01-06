@@ -21,6 +21,7 @@ SADD type:PMR A-4 A-5 A-9 A-10 B-4 B-5 B-9 B-10
 HSET spot:A-6 status 0 type NORMAL parking_id A covered 0
 HSET spot:A-1 status 0 type NORMAL parking_id A covered 1
 HSET spot:A-18 status 0 type EV parking_id A covered 0
+SET weather:rain "0"
 SADD type:COVERED A-1 A-2 A-3 B-1 B-2 B-3
 HSET spot:A-16 status 0 type EV parking_id A covered 0
 HSET spot:B-19 status 0 type EV parking_id B covered 0
