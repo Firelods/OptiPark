@@ -6,7 +6,7 @@ import redis
 # Redis connection
 # --------------------------
 r = redis.Redis(
-    host="localhost",   # local run
+    host="redis",   # local run
     port=6379,
     decode_responses=True
 )

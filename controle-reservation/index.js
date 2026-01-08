@@ -34,6 +34,14 @@ const firestore = admin.firestore();
 const kafka = new Kafka({
   clientId: "reservation-control",
   brokers: KAFKA_BROKERS.split(","),
+  retry: {
+    initialRetryTime: 300,
+    retries: 10,
+    maxRetryTime: 30000,
+    multiplier: 2,
+  },
+  connectionTimeout: 10000,
+  requestTimeout: 30000,
 });
 
 const redis = new Redis({
@@ -49,9 +57,40 @@ async function run() {
   await redis.connect();
   console.log("Redis connected.");
 
-  const consumer = kafka.consumer({ groupId: KAFKA_GROUP_ID });
-  await consumer.connect();
-  await consumer.subscribe({ topics: RAW_TOPICS });
+  const consumer = kafka.consumer({
+    groupId: KAFKA_GROUP_ID,
+    retry: {
+      initialRetryTime: 300,
+      retries: 10,
+      maxRetryTime: 30000,
+    },
+  });
+
+  console.log('Connecting Kafka consumer...');
+  let connected = false;
+  let retryCount = 0;
+  const maxRetries = 10;
+
+  while (!connected && retryCount < maxRetries) {
+    try {
+      await consumer.connect();
+      console.log('Kafka consumer connected.');
+
+      await consumer.subscribe({ topics: RAW_TOPICS });
+      console.log('Kafka consumer subscribed to topics:', RAW_TOPICS);
+      connected = true;
+    } catch (err) {
+      retryCount++;
+      const waitTime = Math.min(1000 * Math.pow(2, retryCount), 30000);
+      console.error(`Failed to connect to Kafka (attempt ${retryCount}/${maxRetries}):`, err.message);
+      console.log(`Retrying in ${waitTime}ms...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+
+  if (!connected) {
+    throw new Error('Failed to connect to Kafka after maximum retries');
+  }
 
   console.log("ReservationControl Firestore POC started.");
 
@@ -94,8 +133,16 @@ async function run() {
 
       console.log(`🎯 Réservation valide trouvée → ${fullName} (${email})`);
 
-      // 2) Récupérer le token FCM
-      const token = await redis.get(`user:${userId}:fcmToken`);
+      // 2) Récupérer le token FCM depuis Firestore
+      const userDoc = await firestore.collection("users").doc(userId).get();
+
+      if (!userDoc.exists) {
+        console.warn(`⚠ Utilisateur ${userId} introuvable dans Firestore`);
+        return;
+      }
+
+      const userData = userDoc.data();
+      const token = userData?.fcmToken;
 
       if (!token) {
         console.warn(`⚠ Aucun token FCM pour user ${userId}`);

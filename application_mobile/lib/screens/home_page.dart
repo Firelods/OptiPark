@@ -1,13 +1,16 @@
 import 'dart:async';
+
 import 'package:application_mobile/screens/map_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+
 import '../services/arrival_notifications.dart';
 import '../services/auth_service.dart';
-import 'qr_page.dart';
+import '../services/fcm_service.dart';
 import '../services/reservation_api.dart';
+import 'qr_page.dart';
 
 class HomePage extends StatefulWidget {
   final String fullName;
@@ -52,34 +55,28 @@ class _HomePageState extends State<HomePage> with RouteAware {
   };
 
   Future<void> _handleArrival(DocumentSnapshot doc) async {
-    final reservationId = doc.id;
-    final reservedPlace = doc["reservedPlace"];
-    final classroom = doc["classroom"];
-    final ev = doc["ev"];
-    final handicap = doc["handicap"];
+    // Annuler le listener pour éviter les appels multiples
+    arrivedListener?.cancel();
+    arrivedListener = null;
 
-    final isInForeground = mounted && ModalRoute.of(context)?.isCurrent == true;
-
-    if (!isInForeground) {
-      await showArrivalNotification(reservationId); // 🔔 background
-      return;
+    // Effacer la réservation active pour revenir à la page d'accueil
+    if (mounted) {
+      setState(() {
+        activeReservation = null;
+        secondsLeft = 0;
+        _expiredHandled = false;
+      });
     }
 
-    // 🔥 app is open → go directly to QR
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => QrPage(
-          fullName: widget.fullName,
-          classroom: classroom,
-          ev: ev,
-          handicap: handicap,
-          reservedPlace: reservedPlace,
-          reservationId: reservationId,
-          arrivedMode: true,
+    // Afficher un message de confirmation
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Arrivée confirmée ! Vous pouvez faire une nouvelle réservation.'),
+          duration: Duration(seconds: 3),
         ),
-      ),
-    );
+      );
+    }
   }
 
   void _listenForArrival() {
@@ -96,7 +93,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
 
           final data = doc.data() as Map<String, dynamic>;
 
-          if (data["Arrived"] == true) {
+          if (data["arrived"] == true) {
             await _handleArrival(doc);
           }
         });
@@ -105,6 +102,10 @@ class _HomePageState extends State<HomePage> with RouteAware {
   @override
   void initState() {
     super.initState();
+
+    // Initialiser FCM
+    FcmService.initialize();
+
     Future.delayed(const Duration(milliseconds: 500), () {
       _checkReservation();
     });

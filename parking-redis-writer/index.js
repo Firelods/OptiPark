@@ -10,6 +10,14 @@ const REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379', 10);
 const kafka = new Kafka({
   clientId: 'parking-redis-writer',
   brokers: KAFKA_BROKERS.split(','),
+  retry: {
+    initialRetryTime: 300,
+    retries: 10,
+    maxRetryTime: 30000,
+    multiplier: 2,
+  },
+  connectionTimeout: 10000,
+  requestTimeout: 30000,
 });
 
 const redis = new Redis({
@@ -29,12 +37,40 @@ async function run() {
   await redis.connect();
   console.log('Redis connected.');
 
-  const consumer = kafka.consumer({ groupId: KAFKA_GROUP_ID });
+  const consumer = kafka.consumer({
+    groupId: KAFKA_GROUP_ID,
+    retry: {
+      initialRetryTime: 300,
+      retries: 10,
+      maxRetryTime: 30000,
+    },
+  });
 
   console.log('Connecting Kafka consumer...');
-  await consumer.connect();
-  await consumer.subscribe({ topics, fromBeginning: false });
-  console.log('Kafka consumer connected and subscribed:', topics);
+  let connected = false;
+  let retryCount = 0;
+  const maxRetries = 10;
+
+  while (!connected && retryCount < maxRetries) {
+    try {
+      await consumer.connect();
+      console.log('Kafka consumer connected.');
+
+      await consumer.subscribe({ topics, fromBeginning: false });
+      console.log('Kafka consumer subscribed to topics:', topics);
+      connected = true;
+    } catch (err) {
+      retryCount++;
+      const waitTime = Math.min(1000 * Math.pow(2, retryCount), 30000);
+      console.error(`Failed to connect to Kafka (attempt ${retryCount}/${maxRetries}):`, err.message);
+      console.log(`Retrying in ${waitTime}ms...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+
+  if (!connected) {
+    throw new Error('Failed to connect to Kafka after maximum retries');
+  }
 
   await consumer.run({
     autoCommit: true,
