@@ -28,7 +28,7 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
 
       # Listeners internes / externes
-      KAFKA_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
 
@@ -97,7 +97,7 @@ services:
     volumes:
       - redis-data:/data
       - ./Redis/init_parking.redis:/scripts/init_parking.redis
-      - ./Redis/init_redis.sh:/scripts/init_redis.sh
+      - ./Redis/init_redis_fixed.sh:/scripts/init_redis.sh
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -118,7 +118,7 @@ services:
         condition: service_healthy
     volumes:
       - ./Redis/init_parking.redis:/scripts/init_parking.redis
-      - ./Redis/init_redis.sh:/scripts/init_redis.sh
+      - ./Redis/init_redis_fixed.sh:/scripts/init_redis.sh
     command: >
       bash -c "
       echo '🔄 Initialisation Redis...';
@@ -229,7 +229,7 @@ services:
   # ---------------------------------------------------------
   application-web:
     build:
-      context: ./application web
+      context: ./application_web
       args:
         VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
         VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
@@ -242,6 +242,54 @@ services:
       - parking-net
     restart: unless-stopped
 
+  # ---------------------------------------------------------
+  # MQTT Broker (Mosquitto) - For ESP32 to publish
+  # ---------------------------------------------------------
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+    restart: unless-stopped
+    networks:
+      - parking-net
+
+  # ---------------------------------------------------------
+  # Simple MQTT -> Kafka bridge (Node.js)
+  # Subscribes to parking topics and produces to Kafka
+  # ---------------------------------------------------------
+  mqtt-kafka-bridge:
+    build: ./mqtt-kafka-bridge
+    container_name: mqtt-kafka-bridge
+    depends_on:
+      - mosquitto
+      - kafka
+    environment:
+      - MQTT_URL=mqtt://mosquitto:1883
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_TOPIC=parking.events
+      - KAFKAJS_NO_PARTITIONER_WARNING=1
+    networks:
+      - parking-net
+    restart: unless-stopped
+
+  # ---------------------------------------------------------
+  # Kafka Connect (optional)
+  # ---------------------------------------------------------
+  # NOTE: kafka-connect is not started by default because the container image
+  # `streamthoughts/kafka-connect-mqtt:latest` is not available on Docker Hub
+  # (pull failed). To enable Kafka Connect with the MQTT Source connector you
+  # can either:
+  #  - Add a Kafka Connect image that already bundles the MQTT connector plugin,
+  #  - Or build a custom Kafka Connect image that installs the MQTT connector
+  #    plugin into the Connect plugin path (see `kafka-connect/README.md` for
+  #    instructions).
+  #
+  # If you want me to enable Kafka Connect automatically, tell me and I can
+  # add a Dockerfile that installs the connector at build time.
+
 
 networks:
   parking-net:
@@ -249,3 +297,5 @@ networks:
 volumes:
   kafka-data:
   redis-data:
+  connect-data:
+

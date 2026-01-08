@@ -1,11 +1,20 @@
 const { Kafka } = require('kafkajs');
 const Redis = require('ioredis');
 
-// ----- Config via variables d'environnement -----
+// ----- Config via environment variables -----
 const KAFKA_BROKERS = process.env.KAFKA_BROKERS || 'kafka:9092';
 const KAFKA_GROUP_ID = process.env.KAFKA_GROUP_ID || 'parking-redis-writer';
 const REDIS_HOST = process.env.REDIS_HOST || 'redis';
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379', 10);
+
+// IMPORTANT: Choose the Kafka topics you want to consume.
+// If you keep your old 3 topics, leave as-is.
+// If you later switch to one unified topic (recommended), set to ['parking.events'].
+const topics = [
+  'parking.nice_sophia.A',
+  'parking.nice_sophia.B',
+  'parking.nice_sophia.C',
+];
 
 const kafka = new Kafka({
   clientId: 'parking-redis-writer',
@@ -26,12 +35,6 @@ const redis = new Redis({
   lazyConnect: true,
 });
 
-const topics = [
-  'parking.nice_sophia.A',
-  'parking.nice_sophia.B',
-  'parking.nice_sophia.C',
-];
-
 async function run() {
   console.log('Connecting to Redis...');
   await redis.connect();
@@ -47,34 +50,15 @@ async function run() {
   });
 
   console.log('Connecting Kafka consumer...');
-  let connected = false;
-  let retryCount = 0;
-  const maxRetries = 10;
+  await consumer.connect();
+  console.log('Kafka consumer connected.');
 
-  while (!connected && retryCount < maxRetries) {
-    try {
-      await consumer.connect();
-      console.log('Kafka consumer connected.');
-
-      await consumer.subscribe({ topics, fromBeginning: false });
-      console.log('Kafka consumer subscribed to topics:', topics);
-      connected = true;
-    } catch (err) {
-      retryCount++;
-      const waitTime = Math.min(1000 * Math.pow(2, retryCount), 30000);
-      console.error(`Failed to connect to Kafka (attempt ${retryCount}/${maxRetries}):`, err.message);
-      console.log(`Retrying in ${waitTime}ms...`);
-      await new Promise(resolve => setTimeout(resolve, waitTime));
-    }
-  }
-
-  if (!connected) {
-    throw new Error('Failed to connect to Kafka after maximum retries');
-  }
+  await consumer.subscribe({ topics, fromBeginning: false });
+  console.log('Kafka consumer subscribed to topics:', topics);
 
   await consumer.run({
     autoCommit: true,
-    eachMessage: async ({ topic, partition, message }) => {
+    eachMessage: async ({ topic, message }) => {
       try {
         const valueStr = message.value?.toString();
         if (!valueStr) {
@@ -86,48 +70,50 @@ async function run() {
         try {
           event = JSON.parse(valueStr);
         } catch (err) {
-          console.error('Failed to parse JSON value:', valueStr, err);
+          console.error('Failed to parse JSON value:', valueStr);
           return;
         }
 
         const { parking_id, slot_id, occupied, battery_mv, sent_at, received_at } = event;
 
+        // Validate required schema fields
         if (!parking_id || !slot_id || typeof occupied !== 'boolean') {
           console.warn('Invalid MagneticRawEvent, missing required fields:', event);
           return;
         }
-        if (occupied){
-          console.log(`Place occupée parking_id=${parking_id} slot_id=${slot_id} pas de mise à jour Redis.`);
-          return
-        } 
 
+        // Keep your redis key format: parking:<A|B|C>:free and spot:<slot>
+        const shortParkingId = parking_id.includes('.') ? parking_id.split('.').pop() : parking_id;
+
+        const parkingFreeKey = `parking:${shortParkingId}:free`;
+        const spotKey = `spot:${slot_id}`;
+
+        // status: 1 occupied, 0 free (matches your init)
         const status = occupied ? 1 : 0;
 
-        // 1) Ajout de la place dans le set du parking
-        const parkingSpotsKey = `parking:${parking_id}:spots`;
-        await redis.sadd(parkingSpotsKey, slot_id);
+        // Maintain free set correctly:
+        // - occupied => remove from free set
+        // - free     => add to free set
+        if (occupied) {
+          await redis.srem(parkingFreeKey, slot_id);
+        } else {
+          await redis.sadd(parkingFreeKey, slot_id);
+        }
 
-        // 2) Mise à jour du hash de la place
-        const spotKey = `spot:${slot_id}`;
+        // Update spot hash (preserve other fields: type, covered, etc.)
         const hashFields = {
-          parking_id: parking_id,
+          parking_id: shortParkingId,
           status: status.toString(),
         };
 
-        if (typeof battery_mv === 'number') {
-          hashFields.battery_mv = battery_mv.toString();
-        }
-        if (sent_at) {
-          hashFields.sent_at = sent_at;
-        }
-        if (received_at) {
-          hashFields.received_at = received_at;
-        }
+        if (typeof battery_mv === 'number') hashFields.battery_mv = battery_mv.toString();
+        if (sent_at) hashFields.sent_at = sent_at;
+        if (received_at) hashFields.received_at = received_at;
 
         await redis.hset(spotKey, hashFields);
 
         console.log(
-          `Updated Redis for event topic=${topic} parking_id=${parking_id} slot_id=${slot_id} status=${status}`
+          `Redis updated: topic=${topic} parking_id=${parking_id} short=${shortParkingId} slot_id=${slot_id} status=${status}`
         );
       } catch (err) {
         console.error('Error processing message from Kafka:', err);
@@ -141,7 +127,7 @@ run().catch((err) => {
   process.exit(1);
 });
 
-// Gestion propre des signaux pour Docker
+// Clean shutdown for Docker
 process.on('SIGINT', async () => {
   console.log('Received SIGINT, closing Redis...');
   await redis.quit();
