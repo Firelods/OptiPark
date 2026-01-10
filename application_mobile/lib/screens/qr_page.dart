@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../services/secure_screen.dart';
 import 'package:application_mobile/screens/home_page.dart';
 import 'package:application_mobile/screens/map_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -55,6 +56,7 @@ class _QrPageState extends State<QrPage> {
   @override
   void initState() {
     super.initState();
+    SecureScreen.enable();
     _loadReservationAndStart();
 
     if (widget.arrivedMode && !_arrivalDialogShown) {
@@ -99,15 +101,11 @@ class _QrPageState extends State<QrPage> {
   // -------------------------------------------------------------
   Future<void> _confirmReservation() async {
     try {
-      // ✅ Appel API → status = 1 dans Redis
       await ReservationAPI.confirmReservation(widget.reservedPlace);
 
-      // ✅ Stop le compteur
       timer?.cancel();
 
       if (!mounted) return;
-
-      // ✅ Retour vers Home (sans supprimer Firestore)
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
@@ -188,6 +186,7 @@ class _QrPageState extends State<QrPage> {
   @override
   void dispose() {
     timer?.cancel();
+    SecureScreen.disable();
     super.dispose();
   }
 
@@ -264,7 +263,8 @@ class _QrPageState extends State<QrPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final qrData = "OPTIPARK:${widget.reservedPlace}:${widget.fullName}";
+    const qrSig = "OPK_V1_20JA02";
+    final qrData = "$qrSig|OPTIPARK:${widget.reservedPlace}:${widget.fullName}";
     final expired = secondsLeft <= 0;
 
     return WillPopScope(

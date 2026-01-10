@@ -1,0 +1,17 @@
+{
+  "$id": "https://parking-campus/schema/rain-event.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RainEvent",
+  "type": "object",
+  "required": [
+    "sensor_id",
+    "rain_pct"
+  ],
+  "properties": {
+    "sensor_id": { "type": "string" },
+    "rain_pct": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "raw": { "type": "integer", "minimum": 0 },
+    "sent_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

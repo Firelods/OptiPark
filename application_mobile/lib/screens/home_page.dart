@@ -72,7 +72,9 @@ class _HomePageState extends State<HomePage> with RouteAware {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Arrivée confirmée ! Vous pouvez faire une nouvelle réservation.'),
+          content: Text(
+            '✅ Arrivée confirmée ! Vous pouvez faire une nouvelle réservation.',
+          ),
           duration: Duration(seconds: 3),
         ),
       );
@@ -422,7 +424,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                 children: [
                   _dropdownTheme(
                     DropdownButtonFormField<String>(
-                      value: selectedBlock,
+                      initialValue: selectedBlock,
                       dropdownColor: _cardBg,
                       borderRadius: BorderRadius.circular(18),
                       icon: const Icon(
