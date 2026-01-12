@@ -102,6 +102,8 @@ docker-compose logs -f
 |---------|-----|
 | Kafka UI | http://localhost:8080 |
 | Schema Registry | http://localhost:8081 |
+| Grafana | http://localhost:3001 |
+
 ## Licence
 
 À définir
@@ -109,3 +111,4 @@ docker-compose logs -f
 ## Contributeurs
 
 Projet OptiPark - Polytech Nice Sophia SI5
+
