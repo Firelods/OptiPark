@@ -12,23 +12,19 @@ class ReservationAPI {
   }
 
   // ============================================================
-  // RESERVE SPOT
+  // RESERVE SPOT (updated to backend contract: block_id + user_type)
   // ============================================================
   static Future<Map<String, dynamic>> reserveSpot({
     required String block,
-    required String rfid,
     required bool ev,
     required bool handicap,
   }) async {
     final baseUrl = await _baseUrl();
     final url = Uri.parse("$baseUrl/reserve");
 
-    final body = {
-      "block_id": block,
-      "rfid_tag": rfid,
-      "ev": ev,
-      "handicap": handicap,
-    };
+    final String userType = handicap ? "PMR" : (ev ? "EV" : "NORMAL");
+
+    final body = {"block_id": block, "user_type": userType};
 
     final response = await http.post(
       url,
@@ -37,9 +33,11 @@ class ReservationAPI {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
-      throw Exception("Reservation failed (${response.statusCode})");
+      // Helpful error surface (backend may return {"error": "..."} )
+      final msg = response.body.isNotEmpty ? response.body : "No body";
+      throw Exception("Reservation failed (${response.statusCode}): $msg");
     }
   }
 

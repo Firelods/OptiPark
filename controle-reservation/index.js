@@ -10,7 +10,6 @@ const KAFKA_GROUP_ID = process.env.KAFKA_GROUP_ID || "reservation-control";
 const REDIS_HOST = process.env.REDIS_HOST || "redis";
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379", 10);
 
-const FIREBASE_CREDENTIALS = process.env.FIREBASE_CREDENTIALS || "/firebase/serviceAccount.json";
 const RESERVATIONS_COLLECTION = "reservations";
 
 const RAW_TOPICS = [
@@ -22,8 +21,40 @@ const RAW_TOPICS = [
 // -----------------------------------------------------------
 // INITIALISATION FIREBASE
 // -----------------------------------------------------------
+let firebaseCredential;
+const fs = require('fs');
+const path = require('path');
+
+if (process.env.FIREBASE_CREDENTIALS_JSON) {
+  // Load from environment variable (base64 encoded or JSON string)
+  try {
+    firebaseCredential = JSON.parse(Buffer.from(process.env.FIREBASE_CREDENTIALS_JSON, 'base64').toString());
+  } catch {
+    firebaseCredential = JSON.parse(process.env.FIREBASE_CREDENTIALS_JSON);
+  }
+} else if (process.env.FIREBASE_CREDENTIALS) {
+  // Load from file path
+  const credPath = process.env.FIREBASE_CREDENTIALS;
+  try {
+    if (fs.existsSync(credPath)) {
+      firebaseCredential = JSON.parse(fs.readFileSync(credPath, 'utf8'));
+    } else {
+      firebaseCredential = require(credPath);
+    }
+  } catch (error) {
+    console.error(`Error loading Firebase credentials from ${credPath}:`, error.message);
+    throw error;
+  }
+} else {
+  console.error('ERROR: Firebase credentials not configured!');
+  console.error('Please set either:');
+  console.error('  1. FIREBASE_CREDENTIALS=/path/to/serviceAccount.json');
+  console.error('  2. FIREBASE_CREDENTIALS_JSON=<base64-encoded-json>');
+  throw new Error('FIREBASE_CREDENTIALS_JSON or FIREBASE_CREDENTIALS environment variable is required');
+}
+
 admin.initializeApp({
-  credential: admin.credential.cert(require(FIREBASE_CREDENTIALS)),
+  credential: admin.credential.cert(firebaseCredential),
 });
 
 const firestore = admin.firestore();

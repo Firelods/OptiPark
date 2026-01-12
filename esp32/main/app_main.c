@@ -159,8 +159,8 @@ static int s_rain01_prev = -1;
 
 #define SERVO_PULSE_MIN_US  1000
 #define SERVO_PULSE_MAX_US  2000
-#define SERVO_OPEN_DEG      90
-#define SERVO_CLOSE_DEG     0
+#define SERVO_OPEN_DEG      0   
+#define SERVO_CLOSE_DEG     90   
 #define SERVO_OPEN_MS       2500
 
 #define GATE_COOLDOWN_MS    5000

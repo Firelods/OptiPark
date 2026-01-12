@@ -84,11 +84,9 @@ def find_best_spot(block_id, user_type="NORMAL"):
 
             attrs = get_spot_attributes(spot["id"])
 
-            # must be FREE
             if attrs["status"] != FREE:
                 continue
 
-            # must match current priority type
             if attrs["type"] != wanted_type:
                 continue
 
@@ -103,7 +101,6 @@ def find_best_spot(block_id, user_type="NORMAL"):
         if not candidates:
             continue
 
-        # 🌧️ weather rule applies ONLY inside same type
         if raining:
             candidates.sort(
                 key=lambda c: (-c["covered"], c["distance"])
