@@ -62,7 +62,7 @@ This ESP32 application controls a parking gate system with the following feature
 
 ### Connection Details
 
-- **Broker URI:** `mqtt://10.111.229.124:1883`
+- **Broker URI:** `mqtt://BROKER_IP:1883`
 - **Protocol:** TCP MQTT
 - **Quality of Service (QoS):** 1 (at least once)
 - **Retain Messages:** Enabled
@@ -244,7 +244,7 @@ idf.py -p COM3 flash monitor          # Windows
 ```
 
 ### MQTT Connection Failed
-- Verify broker IP: `10.111.229.124:1883`
+- Verify broker IP: `BROKER_IP:1883`
 - Check WiFi connection (should see "sta ip:" in logs)
 - Ensure firewall allows port 1883
 
@@ -306,7 +306,7 @@ C:\path\to\esp-idf\export.bat
 ## Deployment Checklist
 
 - [ ] WiFi SSID and password configured in `app_main.c`
-- [ ] MQTT broker address verified: `10.111.229.124:1883`
+- [ ] MQTT broker address verified: `BROKER_IP:1883`
 - [ ] Serial port identified and flashed
 - [ ] Sensors tested (IR + Rain ADC)
 - [ ] Servo motor response verified
