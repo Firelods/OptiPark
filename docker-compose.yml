@@ -14,6 +14,29 @@ services:
       - parking-net
 
   # ---------------------------------------------------------
+  # *) Grafana
+  # ---------------------------------------------------------
+
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3001:3000"   
+    volumes:
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - parking-net
+
+
+  # ---------------------------------------------------------
   # 2) Kafka (classique, stable, sans KRaft)
   # ---------------------------------------------------------
   kafka:
@@ -276,22 +299,6 @@ services:
     networks:
       - parking-net
     restart: unless-stopped
-
-  # ---------------------------------------------------------
-  # Kafka Connect (optional)
-  # ---------------------------------------------------------
-  # NOTE: kafka-connect is not started by default because the container image
-  # `streamthoughts/kafka-connect-mqtt:latest` is not available on Docker Hub
-  # (pull failed). To enable Kafka Connect with the MQTT Source connector you
-  # can either:
-  #  - Add a Kafka Connect image that already bundles the MQTT connector plugin,
-  #  - Or build a custom Kafka Connect image that installs the MQTT connector
-  #    plugin into the Connect plugin path (see `kafka-connect/README.md` for
-  #    instructions).
-  #
-  # If you want me to enable Kafka Connect automatically, tell me and I can
-  # add a Dockerfile that installs the connector at build time.
-
 
 networks:
   parking-net:
