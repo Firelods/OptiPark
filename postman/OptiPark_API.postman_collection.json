@@ -1,0 +1,565 @@
+{
+  "info": {
+    "name": "OptiPark API",
+    "description": "Collection complète des endpoints de l'API OptiPark pour tester les réservations de parking",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "optipark"
+  },
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Vérifier que l'API est en ligne et fonctionnelle"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Weather",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/weather",
+              "host": ["{{base_url}}"],
+              "path": ["weather"]
+            },
+            "description": "Récupérer l'état météo actuel (pluie: 0 ou 1)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Spots Management",
+      "item": [
+        {
+          "name": "Get All Spots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/get-spots",
+              "host": ["{{base_url}}"],
+              "path": ["get-spots"]
+            },
+            "description": "Récupérer toutes les places de parking avec leur statut, type et coordonnées"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reservations",
+      "item": [
+        {
+          "name": "Reserve Spot - Normal User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.spot_id) {",
+                  "        pm.environment.set('reserved_spot_id', jsonData.spot_id);",
+                  "        pm.test('Spot reserved successfully', function() {",
+                  "            pm.expect(jsonData).to.have.property('spot_id');",
+                  "            pm.expect(jsonData.status).to.equal(2);",
+                  "        });",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"NORMAL\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reserve",
+              "host": ["{{base_url}}"],
+              "path": ["reserve"]
+            },
+            "description": "Réserver une place pour un utilisateur normal. L'algorithme trouvera la place la plus proche en fonction de la météo."
+          },
+          "response": []
+        },
+        {
+          "name": "Reserve Spot - PMR User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.spot_id) {",
+                  "        pm.environment.set('reserved_spot_pmr', jsonData.spot_id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"PMR\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reserve",
+              "host": ["{{base_url}}"],
+              "path": ["reserve"]
+            },
+            "description": "Réserver une place PMR (Personne à Mobilité Réduite). Priorité aux places PMR puis NORMAL puis EV."
+          },
+          "response": []
+        },
+        {
+          "name": "Reserve Spot - EV User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.spot_id) {",
+                  "        pm.environment.set('reserved_spot_ev', jsonData.spot_id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"EV\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reserve",
+              "host": ["{{base_url}}"],
+              "path": ["reserve"]
+            },
+            "description": "Réserver une place pour véhicule électrique. Priorité aux places EV (avec borne) puis NORMAL puis PMR."
+          },
+          "response": []
+        },
+        {
+          "name": "Reserve Spot - Parking B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"block_id\": \"block_B\",\n  \"user_type\": \"NORMAL\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reserve",
+              "host": ["{{base_url}}"],
+              "path": ["reserve"]
+            },
+            "description": "Réserver une place dans le parking B"
+          },
+          "response": []
+        },
+        {
+          "name": "Reserve Spot - Parking C",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"block_id\": \"block_C\",\n  \"user_type\": \"NORMAL\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reserve",
+              "host": ["{{base_url}}"],
+              "path": ["reserve"]
+            },
+            "description": "Réserver une place dans le parking C"
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm Reservation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spot_id\": \"{{reserved_spot_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/confirm-reservation",
+              "host": ["{{base_url}}"],
+              "path": ["confirm-reservation"]
+            },
+            "description": "Confirmer une réservation (change le statut de RESERVED à OCCUPIED). Utilise l'ID de place sauvegardé automatiquement."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Reservation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spot_id\": \"{{reserved_spot_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cancel-reservation",
+              "host": ["{{base_url}}"],
+              "path": ["cancel-reservation"]
+            },
+            "description": "Annuler une réservation (remet le statut à FREE). Utilise l'ID de place sauvegardé automatiquement."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Reservation - Manual Spot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spot_id\": \"A-1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cancel-reservation",
+              "host": ["{{base_url}}"],
+              "path": ["cancel-reservation"]
+            },
+            "description": "Annuler une réservation pour une place spécifique (exemple: A-1)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Test Scenarios",
+      "item": [
+        {
+          "name": "Scenario 1: Full Reservation Flow",
+          "item": [
+            {
+              "name": "1. Check Health",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/health",
+                  "host": ["{{base_url}}"],
+                  "path": ["health"]
+                }
+              }
+            },
+            {
+              "name": "2. Check Weather",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/weather",
+                  "host": ["{{base_url}}"],
+                  "path": ["weather"]
+                }
+              }
+            },
+            {
+              "name": "3. Get Available Spots",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/get-spots",
+                  "host": ["{{base_url}}"],
+                  "path": ["get-spots"]
+                }
+              }
+            },
+            {
+              "name": "4. Reserve a Spot",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.environment.set('test_spot_id', jsonData.spot_id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"NORMAL\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/reserve",
+                  "host": ["{{base_url}}"],
+                  "path": ["reserve"]
+                }
+              }
+            },
+            {
+              "name": "5. Verify Spot is Reserved",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/get-spots",
+                  "host": ["{{base_url}}"],
+                  "path": ["get-spots"]
+                }
+              }
+            },
+            {
+              "name": "6. Confirm Arrival",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"spot_id\": \"{{test_spot_id}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/confirm-reservation",
+                  "host": ["{{base_url}}"],
+                  "path": ["confirm-reservation"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Scenario 2: Cancel Reservation",
+          "item": [
+            {
+              "name": "1. Reserve a Spot",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.environment.set('cancel_test_spot', jsonData.spot_id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"NORMAL\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/reserve",
+                  "host": ["{{base_url}}"],
+                  "path": ["reserve"]
+                }
+              }
+            },
+            {
+              "name": "2. Cancel the Reservation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"spot_id\": \"{{cancel_test_spot}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/cancel-reservation",
+                  "host": ["{{base_url}}"],
+                  "path": ["cancel-reservation"]
+                }
+              }
+            },
+            {
+              "name": "3. Verify Spot is Free",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/get-spots",
+                  "host": ["{{base_url}}"],
+                  "path": ["get-spots"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Scenario 3: Multiple User Types",
+          "item": [
+            {
+              "name": "1. Reserve - Normal User",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"NORMAL\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/reserve",
+                  "host": ["{{base_url}}"],
+                  "path": ["reserve"]
+                }
+              }
+            },
+            {
+              "name": "2. Reserve - PMR User",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"PMR\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/reserve",
+                  "host": ["{{base_url}}"],
+                  "path": ["reserve"]
+                }
+              }
+            },
+            {
+              "name": "3. Reserve - EV User",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"EV\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/reserve",
+                  "host": ["{{base_url}}"],
+                  "path": ["reserve"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ]
+}
