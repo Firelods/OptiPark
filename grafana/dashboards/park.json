@@ -20,12 +20,10 @@
   "graphTooltip": 0,
   "id": 8,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
       "datasource": {
-        "type": "redis-datasource",
-        "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+        "type": "redis-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -38,7 +36,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -50,7 +48,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 0,
         "y": 0
@@ -61,6 +59,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -68,17 +67,18 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "9.5.1",
+      "pluginVersion": "12.3.0",
       "targets": [
         {
           "command": "",
           "datasource": {
-            "type": "redis-datasource",
-            "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+            "type": "redis-datasource"
           },
-          "query": "EVAL \"\nreturn redis.call('SCARD','parking:A:spots')\n     + redis.call('SCARD','parking:B:spots')\n     + redis.call('SCARD','parking:C:spots')\n\" 0\n",
+          "query": "EVAL \"\nlocal cursor = '0'\nlocal count = 0\nrepeat\n  local res = redis.call('SCAN', cursor, 'MATCH', 'spot:*', 'COUNT', 100)\n  cursor = res[1]\n  count = count + #res[2]\nuntil cursor == '0'\nreturn count\n\" 0\n",
           "refId": "A",
           "type": "cli"
         }
@@ -88,8 +88,7 @@
     },
     {
       "datasource": {
-        "type": "redis-datasource",
-        "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+        "type": "redis-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -101,6 +100,9 @@
             "cellOptions": {
               "type": "auto"
             },
+            "footer": {
+              "reducers": []
+            },
             "inspect": false
           },
           "mappings": [],
@@ -109,7 +111,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -138,7 +140,7 @@
                   "steps": [
                     {
                       "color": "super-light-green",
-                      "value": null
+                      "value": 0
                     },
                     {
                       "color": "dark-green",
@@ -177,7 +179,7 @@
         ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 12,
         "y": 0
@@ -185,25 +187,16 @@
       "id": 8,
       "options": {
         "cellHeight": "lg",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "9.5.1",
+      "pluginVersion": "12.3.0",
       "targets": [
         {
           "command": "",
           "datasource": {
-            "type": "redis-datasource",
-            "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+            "type": "redis-datasource"
           },
-          "query": "EVAL \" \nlocal spots = redis.call('SMEMBERS', 'parking:A:spots')\nredis.call('DEL', 'parking:A:spots:json')\nfor i, spot in ipairs(spots) do\n    local data = redis.call('HGETALL', 'spot:' .. spot)\n    local row = {Spot = spot}\n    for j = 1, #data, 2 do\n        row[data[j]] = data[j+1]\n    end\n    redis.call('RPUSH', 'parking:A:spots:json', cjson.encode(row))\nend\nreturn redis.call('LRANGE', 'parking:A:spots:json', 0, -1)\n\" 0\n",
+          "query": "EVAL \"\nlocal cursor = '0'\nlocal spots = {}\n-- Récupère tous les spots du parking A\nrepeat\n    local res = redis.call('SCAN', cursor, 'MATCH', 'spot:A-*', 'COUNT', 100)\n    cursor = res[1]\n    for i, k in ipairs(res[2]) do\n        table.insert(spots, k)\n    end\nuntil cursor == '0'\n\n-- Supprime l'ancienne liste JSON\nredis.call('DEL', 'parking:A:spots:json')\n\n-- Génère la liste JSON\nfor i, spot_key in ipairs(spots) do\n    local data = redis.call('HGETALL', spot_key)\n    local row = {Spot = spot_key:gsub('spot:', '')}  -- enlève le préfixe 'spot:'\n    for j = 1, #data, 2 do\n        row[data[j]] = data[j+1]\n    end\n    redis.call('RPUSH', 'parking:A:spots:json', cjson.encode(row))\nend\n\nreturn redis.call('LRANGE', 'parking:A:spots:json', 0, -1)\n\" 0\n",
           "refId": "A",
           "streaming": false,
           "streamingDataType": "TimeSeries",
@@ -225,8 +218,7 @@
     },
     {
       "datasource": {
-        "type": "redis-datasource",
-        "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+        "type": "redis-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -241,7 +233,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -257,10 +249,12 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 8
+        "y": 7
       },
       "id": 3,
       "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -271,15 +265,15 @@
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": false,
+        "sizing": "auto",
         "text": {}
       },
-      "pluginVersion": "9.5.1",
+      "pluginVersion": "12.3.0",
       "targets": [
         {
           "command": "",
           "datasource": {
-            "type": "redis-datasource",
-            "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+            "type": "redis-datasource"
           },
           "query": "EVAL \"\nlocal sum=0\nlocal c=0\nfor _,k in ipairs(redis.call('KEYS','spot:*')) do\n  if redis.call('HGET',k,'type')=='EV' then\n    local b=tonumber(redis.call('HGET',k,'battery_level'))\n    if b then sum=sum+b c=c+1 end\n  end\nend\nif c==0 then return 0 end\nreturn math.floor(sum/c)\n\" 0\n",
           "refId": "A",
@@ -291,8 +285,7 @@
     },
     {
       "datasource": {
-        "type": "redis-datasource",
-        "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+        "type": "redis-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -304,6 +297,9 @@
             "cellOptions": {
               "type": "auto"
             },
+            "footer": {
+              "reducers": []
+            },
             "inspect": false
           },
           "mappings": [],
@@ -312,7 +308,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -341,7 +337,7 @@
                   "steps": [
                     {
                       "color": "super-light-green",
-                      "value": null
+                      "value": 0
                     },
                     {
                       "color": "dark-green",
@@ -383,30 +379,21 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 8
+        "y": 7
       },
       "id": 10,
       "options": {
         "cellHeight": "lg",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "9.5.1",
+      "pluginVersion": "12.3.0",
       "targets": [
         {
           "command": "",
           "datasource": {
-            "type": "redis-datasource",
-            "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+            "type": "redis-datasource"
           },
-          "query": "EVAL \" \nlocal spots = redis.call('SMEMBERS', 'parking:B:spots')\nredis.call('DEL', 'parking:B:spots:json')\nfor i, spot in ipairs(spots) do\n    local data = redis.call('HGETALL', 'spot:' .. spot)\n    local row = {Spot = spot}\n    for j = 1, #data, 2 do\n        row[data[j]] = data[j+1]\n    end\n    redis.call('RPUSH', 'parking:B:spots:json', cjson.encode(row))\nend\nreturn redis.call('LRANGE', 'parking:B:spots:json', 0, -1)\n\" 0\n",
+          "query": "EVAL \"\nlocal cursor = '0'\nlocal spots = {}\n-- Récupère tous les spots du parking B\nrepeat\n    local res = redis.call('SCAN', cursor, 'MATCH', 'spot:B-*', 'COUNT', 100)\n    cursor = res[1]\n    for i, k in ipairs(res[2]) do\n        table.insert(spots, k)\n    end\nuntil cursor == '0'\n\n-- Supprime l'ancienne liste JSON\nredis.call('DEL', 'parking:B:spots:json')\n\n-- Génère la liste JSON\nfor i, spot_key in ipairs(spots) do\n    local data = redis.call('HGETALL', spot_key)\n    local row = {Spot = spot_key:gsub('spot:', '')}  -- enlève le préfixe 'spot:'\n    for j = 1, #data, 2 do\n        row[data[j]] = data[j+1]\n    end\n    redis.call('RPUSH', 'parking:B:spots:json', cjson.encode(row))\nend\n\nreturn redis.call('LRANGE', 'parking:B:spots:json', 0, -1)\n\" 0\n",
           "refId": "A",
           "streaming": false,
           "streamingDataType": "TimeSeries",
@@ -428,8 +415,7 @@
     },
     {
       "datasource": {
-        "type": "redis-datasource",
-        "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+        "type": "redis-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -442,7 +428,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "orange",
@@ -461,7 +447,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 15
       },
       "id": 2,
       "options": {
@@ -469,6 +455,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -476,15 +463,16 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "9.5.1",
+      "pluginVersion": "12.3.0",
       "targets": [
         {
           "command": "",
           "datasource": {
-            "type": "redis-datasource",
-            "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+            "type": "redis-datasource"
           },
           "query": "EVAL \"\nlocal c=0\nfor _,k in ipairs(redis.call('KEYS','spot:*')) do\n  if redis.call('HGET',k,'type')=='EV' then\n    local b=tonumber(redis.call('HGET',k,'battery_level'))\n    if b and b < 20 then c=c+1 end\n  end\nend\nreturn c\n\" 0\n",
           "refId": "A",
@@ -496,145 +484,71 @@
     },
     {
       "datasource": {
-        "type": "redis-datasource",
-        "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+        "type": "redis-datasource"
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "continuous-BlYlRd"
-          },
-          "custom": {
-            "align": "center",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
           "mappings": [],
           "thresholds": {
-            "mode": "absolute",
+            "mode": "percentage",
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 20
+              },
+              {
+                "color": "orange",
+                "value": 70
               }
             ]
           }
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "status"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "super-light-green",
-                      "value": null
-                    },
-                    {
-                      "color": "dark-green",
-                      "value": 0
-                    },
-                    {
-                      "color": "red",
-                      "value": 1
-                    },
-                    {
-                      "color": "#EAB839",
-                      "value": 2
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "battery_level"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              },
-              {
-                "id": "color"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 15
       },
-      "id": 11,
+      "id": 4,
       "options": {
-        "cellHeight": "lg",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
           ],
-          "show": false
+          "fields": "",
+          "values": false
         },
-        "showHeader": true
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
       },
-      "pluginVersion": "9.5.1",
+      "pluginVersion": "12.3.0",
       "targets": [
         {
           "command": "",
           "datasource": {
-            "type": "redis-datasource",
-            "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+            "type": "redis-datasource"
           },
-          "query": "EVAL \" \nlocal spots = redis.call('SMEMBERS', 'parking:C:spots')\nredis.call('DEL', 'parking:C:spots:json')\nfor i, spot in ipairs(spots) do\n    local data = redis.call('HGETALL', 'spot:' .. spot)\n    local row = {Spot = spot}\n    for j = 1, #data, 2 do\n        row[data[j]] = data[j+1]\n    end\n    redis.call('RPUSH', 'parking:C:spots:json', cjson.encode(row))\nend\nreturn redis.call('LRANGE', 'parking:C:spots:json', 0, -1)\n\" 0\n",
+          "query": "EVAL \"\nlocal cursor = '0'\nlocal count = 0\nrepeat\n    local res = redis.call('SCAN', cursor, 'MATCH', 'spot:B-*', 'COUNT', 100)\n    cursor = res[1]\n    for i, k in ipairs(res[2]) do\n        if redis.call('HGET', k, 'status') == '0' then\n            count = count + 1\n        end\n    end\nuntil cursor == '0'\nreturn count\n\" 0\n",
           "refId": "A",
-          "streaming": false,
-          "streamingDataType": "TimeSeries",
           "type": "cli"
         }
       ],
-      "title": "Parking C – État des places",
-      "transformations": [
-        {
-          "id": "extractFields",
-          "options": {
-            "format": "kvp",
-            "replace": true,
-            "source": "Value"
-          }
-        }
-      ],
-      "type": "table"
+      "title": "Parking B – Libres",
+      "type": "gauge"
     },
     {
       "datasource": {
-        "type": "redis-datasource",
-        "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+        "type": "redis-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -647,7 +561,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -663,7 +577,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 24
+        "y": 23
       },
       "id": 7,
       "options": {
@@ -671,20 +585,22 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [],
           "fields": "/.*/",
           "values": true
         },
-        "textMode": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "9.5.1",
+      "pluginVersion": "12.3.0",
       "targets": [
         {
           "command": "",
           "datasource": {
-            "type": "redis-datasource",
-            "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+            "type": "redis-datasource"
           },
           "query": "EVAL \"\nlocal covered=0\nlocal total=0\nfor _,k in ipairs(redis.call('KEYS','spot:*')) do\n  total = total + 1\n  if redis.call('HGET',k,'covered')=='1' then covered = covered + 1 end\nend\nreturn covered..'/'..total\n\" 0\n",
           "refId": "A",
@@ -696,8 +612,7 @@
     },
     {
       "datasource": {
-        "type": "redis-datasource",
-        "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+        "type": "redis-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -707,7 +622,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -726,10 +641,12 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 24
+        "y": 23
       },
-      "id": 4,
+      "id": 6,
       "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -739,28 +656,27 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "sizing": "auto"
       },
-      "pluginVersion": "9.5.1",
+      "pluginVersion": "12.3.0",
       "targets": [
         {
           "command": "",
           "datasource": {
-            "type": "redis-datasource",
-            "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+            "type": "redis-datasource"
           },
-          "query": "EVAL \"\nlocal c=0\nfor _,s in ipairs(redis.call('SMEMBERS','parking:B:spots')) do\n  if redis.call('HGET','spot:'..s,'status')=='0' then c=c+1 end\nend\nreturn c\n\" 0\n",
+          "query": "EVAL \"\nlocal parks = {'A','B','C'}\nlocal total = 0\n\nfor _, park in ipairs(parks) do\n    local cursor = '0'\n    repeat\n        local res = redis.call('SCAN', cursor, 'MATCH', 'spot:'..park..'-*', 'COUNT', 100)\n        cursor = res[1]\n        for i, k in ipairs(res[2]) do\n            if redis.call('HGET', k, 'status') == '0' then\n                total = total + 1\n            end\n        end\n    until cursor == '0'\nend\n\nreturn total\n\" 0\n",
           "refId": "A",
           "type": "cli"
         }
       ],
-      "title": "Parking B – Libres",
+      "title": "Total libres (tous parkings)",
       "type": "gauge"
     },
     {
       "datasource": {
-        "type": "redis-datasource",
-        "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+        "type": "redis-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -769,7 +685,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -788,134 +705,12 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 32
-      },
-      "id": 6,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "pluginVersion": "9.5.1",
-      "targets": [
-        {
-          "command": "",
-          "datasource": {
-            "type": "redis-datasource",
-            "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
-          },
-          "query": "EVAL \"\nlocal c=0\nfor _,p in ipairs({'parking:A:spots','parking:B:spots','parking:C:spots'}) do\n  for _,s in ipairs(redis.call('SMEMBERS',p)) do\n    if redis.call('HGET','spot:'..s,'status')=='0' then\n      c=c+1\n    end\n  end\nend\nreturn c\n\" 0\n",
-          "refId": "A",
-          "type": "cli"
-        }
-      ],
-      "title": "Total libres (tous parkings)",
-      "type": "gauge"
-    },
-    {
-      "datasource": {
-        "type": "redis-datasource",
-        "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 20
-              },
-              {
-                "color": "orange",
-                "value": 70
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 32
-      },
-      "id": 12,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "pluginVersion": "9.5.1",
-      "targets": [
-        {
-          "command": "",
-          "datasource": {
-            "type": "redis-datasource",
-            "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
-          },
-          "query": "EVAL \"\nlocal c=0\nfor _,s in ipairs(redis.call('SMEMBERS','parking:C:spots')) do\n  if redis.call('HGET','spot:'..s,'status')=='0' then c=c+1 end\nend\nreturn c\n\" 0\n",
-          "refId": "A",
-          "type": "cli"
-        }
-      ],
-      "title": "Parking C – Libres",
-      "type": "gauge"
-    },
-    {
-      "datasource": {
-        "type": "redis-datasource",
-        "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 20
-              },
-              {
-                "color": "orange",
-                "value": 70
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 40
+        "y": 31
       },
       "id": 13,
       "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -925,17 +720,17 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "sizing": "auto"
       },
-      "pluginVersion": "9.5.1",
+      "pluginVersion": "12.3.0",
       "targets": [
         {
           "command": "",
           "datasource": {
-            "type": "redis-datasource",
-            "uid": "e2b7edec-7b2a-4570-b131-f07ffe6c264d"
+            "type": "redis-datasource"
           },
-          "query": "EVAL \"\nlocal c=0\nfor _,s in ipairs(redis.call('SMEMBERS','parking:A:spots')) do\n  if redis.call('HGET','spot:'..s,'status')=='0' then c=c+1 end\nend\nreturn c\n\" 0\n",
+          "query": "EVAL \"\nlocal cursor = '0'\nlocal count = 0\nrepeat\n    local res = redis.call('SCAN', cursor, 'MATCH', 'spot:A-*', 'COUNT', 100)\n    cursor = res[1]\n    for i, k in ipairs(res[2]) do\n        if redis.call('HGET', k, 'status') == '0' then\n            count = count + 1\n        end\n    end\nuntil cursor == '0'\nreturn count\n\" 0\n",
           "refId": "A",
           "type": "cli"
         }
@@ -944,21 +739,19 @@
       "type": "gauge"
     }
   ],
+  "preload": false,
   "refresh": "5s",
-  "schemaVersion": 38,
-  "style": "dark",
+  "schemaVersion": 42,
   "tags": [],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "2026-01-05T13:25:43.691Z",
-    "to": "2026-01-06T01:25:43.691Z"
+    "from": "2026-01-05T07:25:43.691Z",
+    "to": "2026-01-06T07:25:43.691Z"
   },
   "timepicker": {},
   "timezone": "",
   "title": "rocher",
-  "uid": "d065e5ae-9a43-4957-a6ee-f9d221d49e4d",
-  "version": 11,
-  "weekStart": ""
+  "version": 19
 }
