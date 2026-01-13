@@ -199,7 +199,6 @@ class _MapPageScreenState extends State<MapPageScreen> {
     final rfid = "RFID-${now.millisecondsSinceEpoch}";
     final backend = await ReservationAPI.reserveSpot(
       block: widget.classroom,
-      rfid: rfid,
       ev: widget.ev,
       handicap: widget.handicap,
     );

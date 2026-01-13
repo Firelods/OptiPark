@@ -8,12 +8,11 @@ const REDIS_HOST = process.env.REDIS_HOST || 'redis';
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379', 10);
 
 // IMPORTANT: Choose the Kafka topics you want to consume.
-// If you keep your old 3 topics, leave as-is.
-// If you later switch to one unified topic (recommended), set to ['parking.events'].
 const topics = [
   'parking.nice_sophia.A',
   'parking.nice_sophia.B',
   'parking.nice_sophia.C',
+  'rain.global',
 ];
 
 const kafka = new Kafka({
@@ -74,6 +73,29 @@ async function run() {
           return;
         }
 
+        // -----------------------------
+        // Handle rain topic (store 0/1)
+        // -----------------------------
+        if (topic === 'rain.global') {
+          const { sensor_id, rain_pct } = event;
+
+          if (!sensor_id || typeof rain_pct !== 'number') {
+            console.warn('Invalid rain event, missing required fields:', event);
+            return;
+          }
+
+          // Tune threshold to your meaning of "rain"
+          const THRESHOLD = 20; // >=20% => rain
+          const rain01 = rain_pct >= THRESHOLD ? 1 : 0;
+
+          await redis.set('weather:rain', String(rain01));
+          console.log(`Redis updated: weather:rain=${rain01} (rain_pct=${rain_pct}, sensor_id=${sensor_id})`);
+          return;
+        }
+
+        // -----------------------------
+        // Handle parking topics
+        // -----------------------------
         const { parking_id, slot_id, occupied, battery_mv, sent_at, received_at } = event;
 
         // Validate required schema fields
