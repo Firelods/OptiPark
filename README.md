@@ -38,10 +38,6 @@ parking.nice_sophia.A/B/C, rain.global
 git clone <repo-url>
 cd OptiPark
 
-# Configurer l'environnement
-cp .env.example .env
-# Éditer .env avec vos clés Supabase
-
 # Démarrer tous les services
 docker-compose up -d
 
@@ -652,3 +648,4 @@ Projet OptiPark - Polytech Nice Sophia SI5
 - **Issues**: Reporter les bugs via GitHub Issues
 - **Guide complet**: [DEPLOYMENT.md](DEPLOYMENT.md)
 - **API Testing**: [postman/README.md](postman/README.md)
+
