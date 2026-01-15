@@ -38,9 +38,6 @@ parking.nice_sophia.A/B/C, rain.global
 git clone <repo-url>
 cd OptiPark
 
-# Configurer l'environnement
-cp .env.example .env
-
 # Démarrer tous les services
 docker-compose up -d
 

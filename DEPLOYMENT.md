@@ -455,8 +455,6 @@ docker-compose exec mosquitto mosquitto_pub -t 'parking/test/status' -m 'test'
 ### Problème: L'application web ne charge pas
 
 ```bash
-# Vérifier que le fichier .env existe et est correct
-cat .env
 
 # Vérifier les logs du build
 docker-compose logs application-web
