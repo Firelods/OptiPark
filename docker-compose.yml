@@ -67,8 +67,8 @@ services:
       test: ["CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 30s
+      retries: 10
+      start_period: 60s
     networks:
       - parking-net
 
@@ -255,9 +255,6 @@ services:
   application-web:
     build:
       context: ./application_web
-      args:
-        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
-        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
     container_name: application-web
     depends_on:
       - reservation

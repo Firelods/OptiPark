@@ -93,7 +93,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"NORMAL\"\n}"
+              "raw": "{\n  \"block_id\": \"A\",\n  \"user_type\": \"NORMAL\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/reserve",
@@ -132,7 +132,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"PMR\"\n}"
+              "raw": "{\n  \"block_id\": \"A\",\n  \"user_type\": \"PMR\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/reserve",
@@ -171,7 +171,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"EV\"\n}"
+              "raw": "{\n  \"block_id\": \"A\",\n  \"user_type\": \"EV\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/reserve",
@@ -367,7 +367,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"NORMAL\"\n}"
+                  "raw": "{\n  \"block_id\": \"A\",\n  \"user_type\": \"NORMAL\"\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/reserve",
@@ -440,7 +440,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"NORMAL\"\n}"
+                  "raw": "{\n  \"block_id\": \"A\",\n  \"user_type\": \"NORMAL\"\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/reserve",
@@ -499,7 +499,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"NORMAL\"\n}"
+                  "raw": "{\n  \"block_id\": \"A\",\n  \"user_type\": \"NORMAL\"\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/reserve",
@@ -520,7 +520,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"PMR\"\n}"
+                  "raw": "{\n  \"block_id\": \"A\",\n  \"user_type\": \"PMR\"\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/reserve",
@@ -541,7 +541,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"block_id\": \"block_A\",\n  \"user_type\": \"EV\"\n}"
+                  "raw": "{\n  \"block_id\": \"A\",\n  \"user_type\": \"EV\"\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/reserve",
