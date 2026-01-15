@@ -40,7 +40,6 @@ cd OptiPark
 
 # Configurer l'environnement
 cp .env.example .env
-# Éditer .env avec vos clés Supabase
 
 # Démarrer tous les services
 docker-compose up -d
@@ -477,19 +476,6 @@ docker-compose logs -f controle-reservation
 ```
 
 ## Configuration
-
-### Variables d'environnement
-
-Créer un fichier `.env` à la racine:
-
-```bash
-# Supabase (pour l'application web)
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=your_public_key
-
-# Firebase (pour controle-reservation)
-# Placer serviceAccount.json dans controle-reservation/firebase/
-```
 
 ### Fichiers de configuration
 

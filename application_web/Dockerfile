@@ -3,9 +3,6 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
-# Arguments de build pour les variables d'environnement Vite
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_PUBLISHABLE_KEY
 
 # Copie des fichiers de dépendances
 COPY package*.json ./
@@ -16,9 +13,6 @@ RUN npm install
 # Copie du code source
 COPY . .
 
-# Build de l'application avec les variables d'environnement
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
-ENV VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY
 RUN npm run build
 
 # Production stage

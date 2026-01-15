@@ -76,23 +76,6 @@ Assurez-vous que les ports suivants sont disponibles:
 
 ## Configuration
 
-### 1. Fichier d'environnement
-
-Créez un fichier `.env` à la racine du projet à partir du template:
-
-```bash
-cp .env.example .env
-```
-
-Éditez le fichier `.env` et renseignez les valeurs Supabase:
-
-```bash
-VITE_SUPABASE_URL=https://votre-projet.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=votre_cle_publique_supabase
-```
-
-**Note**: Ces variables sont utilisées pour l'authentification de l'application web frontend.
-
 ### 2. Configuration Firebase (Controle-Reservation)
 
 Le service `controle-reservation` nécessite un fichier de credentials Firebase:
@@ -353,62 +336,40 @@ Ces services s'exécutent une seule fois au démarrage puis se terminent:
 
 ```bash
 # Publier un événement de libération de place
-docker-compose exec mosquitto mosquitto_pub \
-  -t 'parking/nice_sophia.A/status' \
-  -m '{
-    "parking_id":"nice_sophia.A",
-    "slot_id":"A-12",
-    "occupied":false,
-    "battery_mv":3500,
-    "sent_at":"2026-01-13T10:00:00Z"
-  }'
+docker-compose exec mosquitto mosquitto_pub  -t 'parking/nice_sophia.A/status' -m '{ \"parking_id\":\"nice_sophia.A\",  \"slot_id\":\"A-13\",  \"occupied\":true,  \"battery_mv\":3500,  \"sent_at\":\"2026-01-13T10:00:00Z\"}'
 ```
 
 #### 2. Vérifier dans Kafka
 
-```bash
-# Consommer les messages du topic
-docker-compose exec kafka kafka-console-consumer \
-  --bootstrap-server localhost:9092 \
-  --topic parking.nice_sophia.A \
-  --from-beginning \
-  --max-messages 1
-```
+Aller sur la page [http://localhost:8080/ui/clusters/parking/all-topics/parking.nice_sophia.A/messages](http://localhost:8080/ui/clusters/parking/all-topics/parking.nice_sophia.A/messages)
 
 #### 3. Vérifier dans Redis
 
 ```bash
 # Vérifier que la place A-12 est bien à jour
-docker-compose exec redis redis-cli HGETALL spot:A-12
+docker-compose exec redis redis-cli HGETALL spot:A-13
 
 # Résultat attendu:
 # 1) "parking_id"
-# 2) "nice_sophia.A"
+# 2) "A"
 # 3) "status"
-# 4) "0"  (0 = libre, 1 = occupé)
+# 4) "1"  (0 = libre, 1 = occupé)
 # 5) "battery_mv"
 # 6) "3500"
 ```
 
-### Test de l'API Reservation
+### Test de la présence de l'état de la place en base
 
-```bash
-# Lister les parkings disponibles
-curl http://localhost:8000/parkings
+#### Lister toutes les places 
+curl http://localhost:8000/get-spots
 
-# Obtenir les places d'un parking
-curl http://localhost:8000/parkings/A/spots
 
-# Créer une réservation (exemple)
-curl -X POST http://localhost:8000/reservations \
-  -H "Content-Type: application/json" \
-  -d '{
-    "parking_id": "A",
-    "slot_id": "A-12",
-    "user_id": "user123",
-    "duration": 3600
-  }'
-```
+#### Aller voir sur la page web en direct l'état du parking 
+
+Interface 3D : [http://localhost:3000/](http://localhost:3000/)
+
+### Test avec une réservation
+En important la [collections Postman](postman/README.md), vous pouvez tester une route de réservation et consulter directement la présence du titre "Reserved" sur la place du parking qui vous a été attribué
 
 ### Test avec un ESP32 réel
 
