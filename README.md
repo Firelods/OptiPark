@@ -635,3 +635,4 @@ Projet OptiPark - Polytech Nice Sophia SI5
 - **Issues**: Reporter les bugs via GitHub Issues
 - **Guide complet**: [DEPLOYMENT.md](DEPLOYMENT.md)
 - **API Testing**: [postman/README.md](postman/README.md)
+
